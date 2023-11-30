@@ -20,10 +20,11 @@ import struct
 import sys
 import time
 import traceback
+from detector import predict
 
 
 LOGFILE = pathlib.Path(
-    '/home/sauce/thunderbird-addon-spam-detector/thunderbird-addon-scriptable-notifications-main/src', pathlib.Path(__file__).with_suffix('.log').name
+    '/home/sauce/thunderbird-addon-spam-detector/src', pathlib.Path(__file__).with_suffix('.log').name
     ).expanduser()
 
 
@@ -82,6 +83,10 @@ def main():
                 print(f'\n====== {time.asctime()} ======', file=log, flush=True)
                 pp = pprint.PrettyPrinter(stream=log)
                 pp.pprint(payload)
+                if payload["message"] != None:
+                    pp.pprint(payload["message"]["content"])
+                    pp.pprint(predict(payload["message"]["content"]))
+
                 print('======', file=log, flush=True)
 
                 # Send back required message
