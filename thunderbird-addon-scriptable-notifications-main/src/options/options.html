@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<!--
+  MIT License
+  Copyright (c) 2022 Electro Type
+  Copyright (c) 2022 Stephan Helma
+-->
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Scriptable Notifications - Options</title>
+    <link rel="stylesheet" href="options.css">
+  </head>
+
+  <body>
+
+    <header>
+      <div>
+        <img src="../../assets/icons/icon-64.png" /> Scriptable Notifications - Options <img src="../../assets/icons/icon-64.png" />
+      </div>
+      <div id="getHelp">
+        <a href="https://github.com/electrotype/thunderbird-addon-scriptable-notifications" target="_blank">Get help</a>
+      </div>
+    </header>
+    <form>
+      <p>
+        <div class="sectionTitle" id="nativescriptHeader">
+          Native script and manifest
+          <span id="nativescriptRightarrow" style="display: inline;">▶</span><span id="nativescriptDownarrow" style="display: none;">▼</span></div>
+        <div id="nativescript" style="display: none;">
+        <p>
+          <div>
+            <strong>1.</strong> Enter the path to your native <em>executable</em> script (bash/batch/etc):
+            <p>
+              This is the script this add-on will call with "<em>true</em>" or "<em>false</em>"
+              depending on if there are unread messages or not in the inboxes you will select
+              below. You can find example scripts
+              <a href="https://github.com/electrotype/thunderbird-addon-scriptable-notifications/tree/main/scriptExamples" target="_blank">here</a>.
+              <div>
+                <input type="text" id="scriptPath" placeholder="/absolute/path/to/the/script" />
+              </div>
+            </p>
+          </div>
+        </p>
+        <p>
+          <div>
+            <strong>2.</strong> Register your script for <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging" target="_blank">Native Messaging</a>:
+          </div>
+
+          <div class="tabBar">
+            <div id="tabLinux" class="tab" data-contentId="registerTabContentLinux">Linux</div>
+            <div id="tabMac" class="tab" data-contentId="registerTabContentMac">Mac</div>
+            <div id="tabWindows" class="tab" data-contentId="registerTabContentWindows">Windows</div>
+          </div>
+          <div id="registerTabContentLinux" class="registerTabContent">
+            <p>
+              Download the resulting manifest and save it to:
+              <code>~/.mozilla/native-messaging-hosts/scriptableNotifications.json</code>.
+              Create the parent directories if required.
+            </p>
+            <p>
+              <button type="button" class="downloadManifest">Download Manifest</button>
+            </p>
+            <p>
+              Note: once the manifest has been generated and saved for the first time, you can
+              edit it directly if you need to change the path to your native script.
+            </p>
+          </div>
+          <div id="registerTabContentMac" class="registerTabContent">
+            <p>
+              Download the resulting manifest and save it to:
+              <code>~/Library/Application Support/Mozilla/NativeMessagingHosts/scriptableNotifications.json</code>.
+              Create the parent directories if required.
+            </p>
+            <p>
+              <button type="button" class="downloadManifest">Download Manifest</button>
+            </p>
+            <p>
+              Note: once the manifest has been generated and saved for the first time, you can
+              edit it directly if you need to change the path to your native script.
+            </p>
+          </div>
+          <div id="registerTabContentWindows" class="registerTabContent">
+            <p>
+              Download and execute the <code>scriptableNotifications.bat</code> file to create
+              the required manifest and Windows registry key.
+            </p>
+            <p>
+              <button type="button" id="downloadWinBatchFile">Download file</button>
+            </p>
+          </div>
+        </p>
+        </div>
+      </p>
+      <p>
+        <div class="sectionTitle">Type of data sent to the native script</div>
+        <p>
+          <div>
+            <p>
+              <input type="radio" id="notifyScriptSimple" name="notifyScriptType" value="simple" checked="checked">
+              <label for="notifyScriptSimple">
+                <strong>Simple</strong>
+                <br/>
+                If there are unread messages, the script receives a "true" whenever a new message
+                is received, read or deleted, otherwise a "false", if there are no new messages.
+                The script must react properly if more than one "true" or "false" are sent in a
+                row.
+              </label>
+            </p>
+            <p>
+              Test:
+              <button type="button" class="smallBtn" id="notifyScriptTrue">true</button>
+              <button type="button" class="smallBtn" id="notifyScriptFalse">false</button>
+            </p>
+            <p>
+              <input type="radio" id="notifyScriptExtended" name="notifyScriptType" value="extended">
+              <label for="notifyScriptExtended">
+                <strong>Extended</strong>
+                <br/>
+                For each new, read or deleted message, the script receives some information about
+                the message (sender, receiver, subject, date received, mailbox and the new status)
+                beside the overall number and the number of unread messages for each watched inbox.
+              </label>
+            </p>
+            <p>
+              Test:
+              <button type="button" class="smallBtn" id="notifyScriptStart">Start Thunderbird</button>
+              <button type="button" class="smallBtn" id="notifyScriptNew">New message</button>
+              <button type="button" class="smallBtn" id="notifyScriptRead">Message read</button>
+            </p>
+          </div>
+        </p>
+      </p>
+      <p>
+        <div class="sectionTitle">Type of data connection</div>
+        <p>
+          <div>
+            <p>
+              <input type="radio" id="notifyConnectionConnectionless" name="notifyConnection" value="connectionless" checked="checked">
+              <label for="notifyConnectionConnectionless">
+                <strong>Connectionless</strong>
+                <br/>
+                A new instance of the native script/application is created for each message.
+              </label>
+            </p>
+            <p>
+              <input type="radio" id="notifyConnectionConnectionbased" name="notifyConnection" value="connectionbased">
+              <label for="notifyConnectionConnectionbased">
+                <strong>Connection based</strong>
+                <br/>
+                This launches the native script/application, if it is not already running.
+                The messages are passed to this script/application, which stays running until Thunderbird is closed.
+              </label>
+            </p>
+          </div>
+        </p>
+      </p>
+      <p>
+        <div class="sectionTitle">Mail/Feed folders to monitor</div>
+        <div>
+          <div id="accountsTip">
+            <em>Tip</em>: To include a mail folder in this list that is not a default <em>inbox</em>, 
+            mark it as "Favorite Folder" (right click it).
+          </div>
+          <ul id="accounts"></ul>
+        </div>
+      </p>
+
+      <p id="btnsRow">
+        <button type="button" id="saveOptions">Save</button>
+        <span id="savedMsg">Options saved!</span>
+      </p>
+    </form>
+    <script src="options.js"></script>
+  </body>
+</html>
