@@ -249,6 +249,14 @@ window.scrNoti.notifyNativeScript = async (message, event) => {
       break;
   };
 
+  await nativeConnection.onMessage.addListener((response) => {
+    const newProperties = {
+      junk: true,
+    };
+    if(response == "1")
+      browser.messages.update(message.id, newProperties);
+  });
+
 };
 
 //==========================================

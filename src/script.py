@@ -83,14 +83,16 @@ def main():
                 print(f'\n====== {time.asctime()} ======', file=log, flush=True)
                 pp = pprint.PrettyPrinter(stream=log)
                 pp.pprint(payload)
+                spam = 0
                 if payload["message"] != None:
                     pp.pprint(payload["message"]["content"])
-                    pp.pprint(predict(payload["message"]["content"]))
+                    spam = predict(payload["message"]["content"])
+                    pp.pprint(spam)
 
                 print('======', file=log, flush=True)
 
                 # Send back required message
-                send_message({})
+                send_message(spam)
 
             except Exception as e:
                 # If anything goes wrong, write the traceback to the logfile

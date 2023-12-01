@@ -19,7 +19,8 @@
     "messagesRead",
     "accountsRead",
     "storage",
-    "nativeMessaging"
+    "nativeMessaging",
+    "messagesMove"
   ],
   "options_ui": {
     "page": "src/options/options.html",
