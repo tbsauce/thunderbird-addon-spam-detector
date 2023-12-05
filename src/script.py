@@ -95,8 +95,8 @@ def main():
                 print('======', file=log, flush=True)
 
                 # Send back required message
-                send_message({"Content" : spam_content, "Header": spam_header})
-
+                #send_message({"Content" : spam_content, "Header": spam_header})
+                send_message(spam_content)
             except Exception as e:
                 # If anything goes wrong, write the traceback to the logfile
                 print(

@@ -174,8 +174,7 @@ window.scrNoti.notifyNativeScript = async (message, event) => {
       //   type: folder.type,
       // },
       content: fullMessage.parts[0].parts[0].body,
-      header: fullMessage.headers,
-      header1: fullMessage.headers[0],
+      //header: fullMessage.headers,
     };
   };
 
