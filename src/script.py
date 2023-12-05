@@ -83,13 +83,14 @@ def main():
                 print(f'\n====== {time.asctime()} ======', file=log, flush=True)
                 pp = pprint.PrettyPrinter(stream=log)
                 pp.pprint(payload)
+
+                #Detect spam mail
                 spam_content = 0
                 spam_header = 0
                 if payload["message"] != None:
-                    pp.pprint(payload["message"]["content"])
                     #Detect Spam by content
                     spam_content = predict(payload["message"]["content"])
-                    pp.pprint(spam_content)
+                    print(f'\Spam Content: {spam_content}', file=log, flush=True)
                     #Detect Spam by Header
 
                 print('======', file=log, flush=True)
