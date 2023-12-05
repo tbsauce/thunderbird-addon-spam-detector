@@ -20,7 +20,7 @@ import struct
 import sys
 import time
 import traceback
-from detector import predict
+from content_detector import predict
 
 
 LOGFILE = pathlib.Path(
@@ -83,16 +83,19 @@ def main():
                 print(f'\n====== {time.asctime()} ======', file=log, flush=True)
                 pp = pprint.PrettyPrinter(stream=log)
                 pp.pprint(payload)
-                spam = 0
+                spam_content = 0
+                spam_header = 0
                 if payload["message"] != None:
                     pp.pprint(payload["message"]["content"])
-                    spam = predict(payload["message"]["content"])
-                    pp.pprint(spam)
+                    #Detect Spam by content
+                    spam_content = predict(payload["message"]["content"])
+                    pp.pprint(spam_content)
+                    #Detect Spam by Header
 
                 print('======', file=log, flush=True)
 
                 # Send back required message
-                send_message(spam)
+                send_message({"Content" : spam_content, "Header": spam_header})
 
             except Exception as e:
                 # If anything goes wrong, write the traceback to the logfile

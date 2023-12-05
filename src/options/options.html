@@ -93,69 +93,6 @@
         </div>
       </p>
       <p>
-        <div class="sectionTitle">Type of data sent to the native script</div>
-        <p>
-          <div>
-            <p>
-              <input type="radio" id="notifyScriptSimple" name="notifyScriptType" value="simple" checked="checked">
-              <label for="notifyScriptSimple">
-                <strong>Simple</strong>
-                <br/>
-                If there are unread messages, the script receives a "true" whenever a new message
-                is received, read or deleted, otherwise a "false", if there are no new messages.
-                The script must react properly if more than one "true" or "false" are sent in a
-                row.
-              </label>
-            </p>
-            <p>
-              Test:
-              <button type="button" class="smallBtn" id="notifyScriptTrue">true</button>
-              <button type="button" class="smallBtn" id="notifyScriptFalse">false</button>
-            </p>
-            <p>
-              <input type="radio" id="notifyScriptExtended" name="notifyScriptType" value="extended">
-              <label for="notifyScriptExtended">
-                <strong>Extended</strong>
-                <br/>
-                For each new, read or deleted message, the script receives some information about
-                the message (sender, receiver, subject, date received, mailbox and the new status)
-                beside the overall number and the number of unread messages for each watched inbox.
-              </label>
-            </p>
-            <p>
-              Test:
-              <button type="button" class="smallBtn" id="notifyScriptStart">Start Thunderbird</button>
-              <button type="button" class="smallBtn" id="notifyScriptNew">New message</button>
-              <button type="button" class="smallBtn" id="notifyScriptRead">Message read</button>
-            </p>
-          </div>
-        </p>
-      </p>
-      <p>
-        <div class="sectionTitle">Type of data connection</div>
-        <p>
-          <div>
-            <p>
-              <input type="radio" id="notifyConnectionConnectionless" name="notifyConnection" value="connectionless" checked="checked">
-              <label for="notifyConnectionConnectionless">
-                <strong>Connectionless</strong>
-                <br/>
-                A new instance of the native script/application is created for each message.
-              </label>
-            </p>
-            <p>
-              <input type="radio" id="notifyConnectionConnectionbased" name="notifyConnection" value="connectionbased">
-              <label for="notifyConnectionConnectionbased">
-                <strong>Connection based</strong>
-                <br/>
-                This launches the native script/application, if it is not already running.
-                The messages are passed to this script/application, which stays running until Thunderbird is closed.
-              </label>
-            </p>
-          </div>
-        </p>
-      </p>
-      <p>
         <div class="sectionTitle">Mail/Feed folders to monitor</div>
         <div>
           <div id="accountsTip">

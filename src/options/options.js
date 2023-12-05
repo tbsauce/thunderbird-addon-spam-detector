@@ -136,56 +136,6 @@ const addListeners = async () => {
       downloadWinBatchFile();
     });
 
-  document
-    .querySelector("#notifyScriptSimple")
-    .addEventListener("change", () => {
-      document.getElementById("notifyScriptTrue").disabled = false;
-      document.getElementById("notifyScriptFalse").disabled = false;
-      document.getElementById("notifyScriptStart").disabled = true;
-      document.getElementById("notifyScriptNew").disabled = true;
-      document.getElementById("notifyScriptRead").disabled = true;
-    });
-
-  document
-    .querySelector("#notifyScriptExtended")
-    .addEventListener("change", () => {
-      document.getElementById("notifyScriptTrue").disabled = true;
-      document.getElementById("notifyScriptFalse").disabled = true;
-      document.getElementById("notifyScriptStart").disabled = false;
-      document.getElementById("notifyScriptNew").disabled = false;
-      document.getElementById("notifyScriptRead").disabled = false;
-    });
-
-  document
-    .querySelector("#notifyScriptTrue")
-    .addEventListener("click", async () => {
-      await sendTestToScript(true);
-    });
-
-  document
-    .querySelector("#notifyScriptFalse")
-    .addEventListener("click", async () => {
-      await sendTestToScript(false);
-    });
-
-  document
-    .querySelector("#notifyScriptStart")
-    .addEventListener("click", async () => {
-      await sendTestToScript("start");
-    });
-
-  document
-    .querySelector("#notifyScriptNew")
-    .addEventListener("click", async () => {
-      await sendTestToScript("new");
-    });
-
-  document
-    .querySelector("#notifyScriptRead")
-    .addEventListener("click", async () => {
-      await sendTestToScript("read");
-    });
-
   document.querySelectorAll(".tab").forEach((tabEl) => {
     tabEl.addEventListener("click", async function () {
       document.querySelectorAll(".tab").forEach((tabEl2) => {
@@ -218,105 +168,6 @@ const addListeners = async () => {
 };
 
 //==========================================
-// Send test to script
-//==========================================
-const sendTestToScript = async (event) => {
-  const payload = {
-    "accounts": [
-      {"id": "account1",
-       "identities": [],
-       "name": "Local Folders",
-       "type": "none"},
-      {"id": "account2",
-       "identities": [
-          {"email": "name.surname@company.com",
-           "label": "",
-           "name": "Name Surname",
-           "organization": "Company"}],
-       "name": "Business",
-       "type": "imap"},
-      {"id": "account3",
-       "identities": [
-          {"email": "name@private.net",
-           "label": "",
-           "name": "Name Surname",
-           "organization": ""},
-          {"email": "name.surname@private.net",
-           "label": "",
-           "name": "Name Surname",
-           "organization": ""}],
-       "name": "Private",
-       "type": "imap"}],
-    "folders": [
-      {"accountId": "account2",
-       "favorite": true,
-       "name": "Inbox",
-       "path": "/INBOX",
-       "totalMessageCount": 74,
-       "type": "inbox",
-       "unreadMessageCount": 7,
-       "seenMessageCount": 7},
-      {"accountId": "account3",
-       "favorite": true,
-       "name": "Inbox",
-       "path": "/INBOX",
-       "totalMessageCount": 94,
-       "type": "inbox",
-       "unreadMessageCount": 3,
-       "seenMessageCount": 3}],
-    "event": event,
-    "message": {
-      "author": "Someone Else <some.one.else@nowhere.org>",
-      "ccList": [],
-      "date": "2022-10-12T16:05:00.000Z",
-      "flagged": false,
-      "messageId": "9477b273-0cea-c454-e6c3-86f452807092@nowhere.org",
-      "headersOnly": false,
-      "junk": false,
-      "junkScore": 0,
-      "read": true,
-      "size": 4014,
-      "subject": "Scriptable Notifications",
-      "tags": [],
-      "folder": {
-        "accountId": "account3",
-        "name": "Inbox",
-        "path": "/INBOX",
-        "type": "inbox"}
-      }
-    };
-  switch (event) {
-    case "start":
-      // Set message to null
-      payload.message = null;
-      await browser.runtime.sendNativeMessage(
-        "scriptableNotifications",
-        payload
-      );
-      break
-    case "new":
-      // Changes 'seenMessageCount'
-      payload.folders.at(1).seenMessageCount = payload.folders.at(1).unreadMessageCount - 1;
-      await browser.runtime.sendNativeMessage(
-        "scriptableNotifications",
-        payload
-      );
-      break
-    case "read":
-      await browser.runtime.sendNativeMessage(
-        "scriptableNotifications",
-        payload
-      );
-      break
-    default:
-      await browser.runtime.sendNativeMessage(
-        "scriptableNotifications",
-        event
-      );
-  };
-};
-
-//==========================================
 // Save options
 //==========================================
 let savedMsgTimeout;
@@ -331,16 +182,8 @@ const saveOptions = async () => {
     }
   }
 
-  // "simple" or "extended"
-  const scriptType = document.querySelector('input[name="notifyScriptType"]:checked').value;
-
-  // "connectionless" or "connectionbased"
-  const connectionType = document.querySelector('input[name="notifyConnection"]:checked').value;
-
   await messenger.storage.local.set({
     foldersToCheck: foldersToCheck,
-    scriptType: scriptType,
-    connectionType: connectionType,
   });
 
   // Sent "options changed" message
@@ -388,46 +231,6 @@ const restoreOptions = async () => {
       optionsPageHasBeenShown: true,
     });
   }
-
-  const { scriptType } = await messenger.storage.local.get({
-    scriptType: "simple",
-  });
-
-  switch (scriptType) {
-    case "simple":
-      document.getElementById("notifyScriptSimple").checked = true;
-      // This should be done automatically with the help of the event listener
-      // "change", but it is not - we do it manually here
-      document.getElementById("notifyScriptTrue").disabled = false;
-      document.getElementById("notifyScriptFalse").disabled = false;
-      document.getElementById("notifyScriptStart").disabled = true;
-      document.getElementById("notifyScriptNew").disabled = true;
-      document.getElementById("notifyScriptRead").disabled = true;
-      break;
-    case "extended":
-      document.getElementById("notifyScriptExtended").checked = true;
-      // This should be done automatically with the help of the event listener
-      // "change", but it is not - we do it manually here
-      document.getElementById("notifyScriptTrue").disabled = true;
-      document.getElementById("notifyScriptFalse").disabled = true;
-      document.getElementById("notifyScriptStart").disabled = false;
-      document.getElementById("notifyScriptNew").disabled = false;
-      document.getElementById("notifyScriptRead").disabled = false;
-      break;
-  };
-
-  const { connectionType } = await messenger.storage.local.get({
-    connectionType: "connectionless",
-  });
-
-  switch (connectionType) {
-    case "connectionless":
-      document.getElementById("notifyConnectionConnectionless").checked = true;
-      break;
-    case "connectionbased":
-      document.getElementById("notifyConnectionConnectionbased").checked = true;
-      break;
-  };
 
   if (isWindows) {
     document.querySelector("#tabWindows").click();
