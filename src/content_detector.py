@@ -37,7 +37,7 @@ def predict(message):
     with open('/home/sauce/thunderbird-addon-spam-detector/src/vectorizer.pkl', 'rb') as vectorizer_file:
         tfidf = pickle.load(vectorizer_file)
 
-    with open('/home/sauce/thunderbird-addon-spam-detector/src/model.pkl', 'rb') as model_file:
+    with open('/home/sauce/thunderbird-addon-spam-detector/src/model_content.pkl', 'rb') as model_file:
         model = pickle.load(model_file)
 
    

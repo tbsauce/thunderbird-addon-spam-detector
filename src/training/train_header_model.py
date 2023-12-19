@@ -90,15 +90,16 @@ df['Similar-Return'] = df.apply(lambda row: 1 if row['Return-Path_Domain'] == ro
 df.drop(['Return-Path_Domain', 'Sender_Domain'], axis=1, inplace=True)
 
 # Extracting domains from email addresses
-df['Sender'] = df['Sender'].apply(lambda x: '@' + x.split('@')[1][:-1] if isinstance(x, str) and '@' in x else '')
-df['Reply-To'] = df['Reply-To'].apply(lambda x: '@' + x.split('@')[1][:-1] if isinstance(x, str) and '@' in x else '')
-df['Return-Path'] = df['Return-Path'].apply(lambda x: '@' + x.split('@')[1][:-1] if isinstance(x, str) and '@' in x else '')
+df['Sender'] = df['Sender'].apply(extract_domain)
+df['Reply-To'] = df['Reply-To'].apply(extract_domain)
+df['Return-Path'] = df['Return-Path'].apply(extract_domain)
 
 df['Date'] = df['Date'].apply(categorize_date)
 
-# print(df.head())
 
+print(df.head())
 y = df['Label'].tolist()
+df = df.drop(columns=['Label'])
 df['Sender'] = df['Sender'].astype('category')
 df['Reply-To'] = df['Reply-To'].astype('category')
 df['Return-Path'] = df['Return-Path'].astype('category')
@@ -113,7 +114,7 @@ enc_data = pd.DataFrame(enc.fit_transform( df[['Sender', 'Reply-To', 'Return-Pat
 
 df = df.join(enc_data)
 df.columns = df.columns.astype(str)
-
+print(df.head())
 X_train, X_test, y_train, y_test = train_test_split(df, y, stratify=y, test_size=0.2, random_state=42)
 
 print(f'Training Data : {len(X_train)}')
@@ -124,8 +125,8 @@ clfs = [
     ('LR', LogisticRegression(random_state=42, multi_class='auto', max_iter=1000)),
     ('KNN', KNeighborsClassifier(n_neighbors=1)),
     ('NB', GaussianNB()),
-    ('RFC', RandomForestClassifier(random_state=42)),
-    ('MLP', MLPClassifier(random_state=42, learning_rate='adaptive', max_iter=1000))
+    ('MLP', MLPClassifier(random_state=42, learning_rate='adaptive', max_iter=1000)),
+    ('RFC', RandomForestClassifier(random_state=42))
 ]
 
 # whenever possible used joblib to speed-up the training
@@ -143,5 +144,8 @@ with joblib.parallel_backend('loky', n_jobs=-1):
         f1 = f1_score(y_test, predictions, average='weighted')
         print(f'{label:3} {acc:.2f} {f1:.2f} {mcc:.2f}')    
     
-joblib.dump(clf, "model_header.pkl")
+joblib.dump(clf, "/home/sauce/thunderbird-addon-spam-detector/src/model_header.pkl")
+# Save the OneHotEncoder
+joblib.dump(enc, "/home/sauce/thunderbird-addon-spam-detector/src/encoder.pkl")
+
 
