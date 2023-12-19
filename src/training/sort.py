@@ -30,11 +30,11 @@ def process_folder(folder_path, label):
                 msg = email.message_from_binary_file(eml_file)
             
             # Extract relevant email information (e.g., subject, sender, date)
-            subject = decode_subject(msg.get('subject', 'No Subject'))
-            sender = msg.get('from', 'No Sender')
-            to = msg.get('to', 'No Recipient')
-            reply_to = msg.get('Reply-To', 'Nobody to reply')
-            date = msg.get('date', 'No Date')
+            subject = decode_subject(msg.get('subject',''))
+            sender = msg.get('from','')
+            return_path = msg.get('Return-Path', '')
+            reply_to = msg.get('Reply-To','')
+            date = msg.get('date','')
 
             # Extract the email content
             content = ""
@@ -43,7 +43,7 @@ def process_folder(folder_path, label):
                     content += part.get_payload(decode=True).decode("utf-8", errors="ignore")
 
             # Append email information, content, and label to the list
-            email_data.append([label, predict(content), predict(str(subject)), sender, to, reply_to, date])
+            email_data.append([label, predict(str(content)), predict(str(subject)), sender, return_path ,reply_to, date])
 
 # Process the spam folder (label 1)
 process_folder(spam_folder_path, 1)
@@ -52,14 +52,14 @@ process_folder(spam_folder_path, 1)
 process_folder(non_spam_folder_path, 0)
 
 # Specify the CSV file path where you want to save the data
-csv_file_path = '/home/sauce/thunderbird-addon-spam-detector/src/datasets/subpredicted.csv'
+csv_file_path = '/home/sauce/thunderbird-addon-spam-detector/src/datasets/myDataset.csv'
 
 # Write email data to the CSV file
 with open(csv_file_path, 'w', newline='', encoding='utf-8') as csv_file:
     csv_writer = csv.writer(csv_file)
     
     # Write headers, including the new "Label" header
-    csv_writer.writerow(['Label','Content', 'Subject', 'Sender', 'To', 'Reply-To', 'Date'])
+    csv_writer.writerow(['Label','Content', 'Subject', 'Sender', 'Return-Path' , 'Reply-To', 'Date'])
     
     # Write email data
     csv_writer.writerows(email_data)

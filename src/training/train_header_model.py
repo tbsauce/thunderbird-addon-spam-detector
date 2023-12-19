@@ -45,8 +45,6 @@ from sklearn.preprocessing import OneHotEncoder
 import datetime
 from dateutil import parser
 
-# Read the CSV file
-df = pd.read_csv('/home/sauce/thunderbird-addon-spam-detector/src/datasets/subpredicted.csv')
 
 def categorize_date(date_str):
     try:
@@ -71,28 +69,47 @@ def categorize_date(date_str):
     except Exception as e:
         print(f"Error parsing date: {date_str} - {e}")
         return None  # or a default category
+    
+def extract_domain(email):
+    if isinstance(email, str) and '@' in email:
+        return email.split('@')[1].split('>')[0]
+    return ''
+
+
+# Read the CSV file
+df = pd.read_csv('/home/sauce/thunderbird-addon-spam-detector/src/datasets/myDataset.csv')
+
+# Apply the function to extract domains
+df['Return-Path_Domain'] = df['Return-Path'].apply(extract_domain)
+df['Sender_Domain'] = df['Sender'].apply(extract_domain)
+
+# Compare and assign values
+df['Similar-Return'] = df.apply(lambda row: 1 if row['Return-Path_Domain'] == row['Sender_Domain'] else 0, axis=1)
+
+# Optionally, you can remove the temporary columns if they are not needed
+df.drop(['Return-Path_Domain', 'Sender_Domain'], axis=1, inplace=True)
 
 # Extracting domains from email addresses
-df['Sender'] = df['Sender'].apply(lambda x: '@' + x.split('@')[1] if '@' in x else x)
-df['To'] = df['To'].apply(lambda x: '@' + x.split('@')[1] if '@' in x else x)
-df['Reply-To'] = df['Reply-To'].apply(lambda x: '@' + x.split('@')[1] if '@' in x else x)
+df['Sender'] = df['Sender'].apply(lambda x: '@' + x.split('@')[1][:-1] if isinstance(x, str) and '@' in x else '')
+df['Reply-To'] = df['Reply-To'].apply(lambda x: '@' + x.split('@')[1][:-1] if isinstance(x, str) and '@' in x else '')
+df['Return-Path'] = df['Return-Path'].apply(lambda x: '@' + x.split('@')[1][:-1] if isinstance(x, str) and '@' in x else '')
+
 df['Date'] = df['Date'].apply(categorize_date)
 
+# print(df.head())
 
 y = df['Label'].tolist()
-df['Sender'] = df['Sender'].astype('category') 
-df['To'] = df['To'].astype('category') 
-df['Reply-To'] = df['Reply-To'].astype('category') 
-df['Date'] = df['Date'].astype('category') 
+df['Sender'] = df['Sender'].astype('category')
+df['Reply-To'] = df['Reply-To'].astype('category')
+df['Return-Path'] = df['Return-Path'].astype('category')
 
-df['Sender'] = df['Sender'].cat.codes 
-df['To'] = df['To'].cat.codes 
-df['Reply-To'] = df['Reply-To'].cat.codes 
-df['Date'] = df['Date'].cat.codes
+df['Sender'] = df['Sender'].cat.codes
+df['Reply-To'] = df['Reply-To'].cat.codes
+df['Return-Path'] = df['Return-Path'].cat.codes
 
 enc = OneHotEncoder(max_categories=5)
 
-enc_data = pd.DataFrame(enc.fit_transform( df[['Sender', 'To', 'Reply-To', 'Date']]).toarray()) 
+enc_data = pd.DataFrame(enc.fit_transform( df[['Sender', 'Reply-To', 'Return-Path']]).toarray()) 
 
 df = df.join(enc_data)
 df.columns = df.columns.astype(str)
