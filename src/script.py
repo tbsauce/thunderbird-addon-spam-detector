@@ -20,7 +20,7 @@ import struct
 import sys
 import time
 import traceback
-from content_detector import predict
+from spam_detector import predict
 
 
 LOGFILE = pathlib.Path(
