@@ -51,7 +51,7 @@ process_folder(spam_folder_path, 1)
 process_folder(non_spam_folder_path, 0)
 
 # Specify the CSV file path where you want to save the data
-csv_file_path = '/home/sauce/thunderbird-addon-spam-detector/src/datasets/training_data.csv'
+csv_file_path = '/home/sauce/thunderbird-addon-spam-detector/src/training/training_data.csv'
 
 # Write email data to the CSV file
 with open(csv_file_path, 'w', newline='', encoding='utf-8') as csv_file:
