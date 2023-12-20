@@ -4,7 +4,6 @@ import csv
 from email.header import decode_header
 import sys
 sys.path.append('..') 
-from content_detector import predict
 
 
 # Function to decode email subject
@@ -43,7 +42,7 @@ def process_folder(folder_path, label):
                     content += part.get_payload(decode=True).decode("utf-8", errors="ignore")
 
             # Append email information, content, and label to the list
-            email_data.append([label, predict(str(content)), predict(str(subject)), sender, return_path ,reply_to, date])
+            email_data.append([label, str(content), str(subject), sender, return_path ,reply_to, date])
 
 # Process the spam folder (label 1)
 process_folder(spam_folder_path, 1)
