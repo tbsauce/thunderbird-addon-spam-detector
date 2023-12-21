@@ -79,9 +79,9 @@ def preprocess_data(data, fasttext, enc):
 
 def predict(data):
     # Load the trained models and transformers
-    enc = joblib.load('/home/sauce/thunderbird-addon-spam-detector/src/hot_encoder.pkl')
-    model = joblib.load('/home/sauce/thunderbird-addon-spam-detector/src/model.pkl')
-    fasttext = joblib.load('/home/sauce/thunderbird-addon-spam-detector/src/fasttext.pkl')
+    enc = joblib.load('hot_encoder.pkl')
+    model = joblib.load('model.pkl')
+    fasttext = joblib.load('fasttext.pkl')
 
     # Preprocess data
     processed_data = preprocess_data(data, fasttext, enc)

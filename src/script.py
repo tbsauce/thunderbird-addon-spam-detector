@@ -24,7 +24,7 @@ from spam_detector import predict
 
 
 LOGFILE = pathlib.Path(
-    '/home/sauce/thunderbird-addon-spam-detector/src', pathlib.Path(__file__).with_suffix('.log').name
+    '.', pathlib.Path(__file__).with_suffix('.log').name
     ).expanduser()
 
 
@@ -85,19 +85,22 @@ def main():
                 pp.pprint(payload)
 
                 #Detect spam mail
-                spam_content = 0
-                spam_header = 0
+                spam = 0
                 if payload["message"] != None:
-                    #Detect Spam by content
-                    spam_content = predict(payload["message"]["content"])
-                    print(f'\Spam Content: {spam_content}', file=log, flush=True)
-                    #Detect Spam by Header
-
+                    body_content = payload['message']['body']['parts'][0]['body']
+                    reply_to = payload['message']['body']['headers'].get('reply-to', [''])[0]
+                    return_path = payload['message']['body']['headers'].get('return-path', [''])[0]
+                    from_address = payload['message']['body']['headers'].get('from', [''])[0]
+                    subject = payload['message']['body']['headers'].get('subject', [''])[0]
+                    date = payload['message']['date']
+                    data_combined = [body_content,subject,from_address,return_path,reply_to,date]
+                    spam = predict(data_combined)
+                    print(f'\Spam: {spam}', file=log, flush=True)
                 print('======', file=log, flush=True)
 
-                # Send back required message
-                #send_message({"Content" : spam_content, "Header": spam_header})
-                send_message(spam_content)
+                # Send back message
+                send_message(spam)
+                
             except Exception as e:
                 # If anything goes wrong, write the traceback to the logfile
                 print(

@@ -69,7 +69,7 @@ def text_to_fasttext_features(text, model):
     return np.mean(vectors, axis=0) if vectors else np.zeros(model.vector_size)
 
 # Read the CSV file
-df = pd.read_csv('/home/sauce/thunderbird-addon-spam-detector/src/training/training_data.csv')
+df = pd.read_csv('training_data.csv')
 
 # Preprocess the data
 lemmatizer = WordNetLemmatizer()
@@ -124,6 +124,6 @@ for label, clf in clfs:
 
 
 # Save the model and encoder
-joblib.dump(clfs[1][1], "/home/sauce/thunderbird-addon-spam-detector/src/model.pkl")
-joblib.dump(enc, "/home/sauce/thunderbird-addon-spam-detector/src/hot_encoder.pkl")
-joblib.dump(fasttext_model, "/home/sauce/thunderbird-addon-spam-detector/src/fasttext.pkl")
+joblib.dump(clfs[-1][1], "../model.pkl")
+joblib.dump(enc, "../hot_encoder.pkl")
+joblib.dump(fasttext_model, "../fasttext.pkl")

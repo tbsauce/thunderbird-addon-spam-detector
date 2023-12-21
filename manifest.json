@@ -1,9 +1,9 @@
 {
   "manifest_version": 2,
-  "name": "Scriptable Notifications",
-  "description": "Allow you to use an external script to manage Thunderbird mails notifications",
+  "name": "Spam Detection",
+  "description": "Detect your spam Emails",
   "version": "5.4",
-  "author": "Electrotype",
+  "author": "tbsauce",
   "browser_specific_settings": {
     "gecko": {
       "id": "{271e72b1-166c-471b-bc06-41e03f176b15}",

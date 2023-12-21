@@ -6,6 +6,12 @@ window.scrNoti = window.scrNoti || {};
 const seenMessages = {};
 let nativeConnection = null;
 
+window.scrNoti.getScriptType = async () => {
+  const { scriptType } = await messenger.storage.local.get({
+    scriptType: "simple",
+  });
+  return scriptType;
+};
 
 //==========================================
 // On new email...
@@ -19,8 +25,13 @@ window.scrNoti.newEmailListener = async (folder, messages) => {
   // Find new messages, which have not been seen yet
   if (messages && messages.messages && messages.messages.length > 0) {
 
+    const scriptType = await window.scrNoti.getScriptType();
     for (const message of messages.messages) {
       if (message && !message.junk) {
+        if (scriptType == "simple") {
+          await window.scrNoti.notifyNativeScript(message, "new");
+          return;
+        }
         if (!seenMessages[folder.accountId + folder.path].has(message.id)) {
           await window.scrNoti.notifyNativeScript(message, "new");
           seenMessages[folder.accountId + folder.path].add(message.id);
@@ -50,7 +61,10 @@ window.scrNoti.messageOnUpdatedListener = async (
   }
 
   if (changedProperties.read) {
-    seenMessages[message.folder.accountId + message.folder.path].delete(message.id);
+    const scriptType = await window.scrNoti.getScriptType();
+    if (scriptType == "extended") {
+      seenMessages[message.folder.accountId + message.folder.path].delete(message.id);
+    }
     await window.scrNoti.notifyNativeScript(message, "read");
   }
 };
@@ -64,6 +78,12 @@ browser.messages.onUpdated.addListener(window.scrNoti.messageOnUpdatedListener);
 //==========================================
 window.scrNoti.onNotifyListener = async (message) => {
   if ("optionsChanged" in message && message.optionsChanged) {
+
+    // Nothing to do for the "simple" mode.
+    const scriptType = await window.scrNoti.getScriptType();
+    if (scriptType == "simple") {
+      return;
+    }
     
     if (nativeConnection != null) {
       nativeConnection.disconnect();
@@ -104,102 +124,137 @@ window.scrNoti.hasUnreadMessages = async () => {
 //==========================================
 window.scrNoti.notifyNativeScript = async (message, event) => {
   let payload = null;
+  const scriptType = await window.scrNoti.getScriptType();
 
-  // List of all accounts
-  const accounts = await messenger.accounts.list(false);
-  const accountsList = {};
-  for (const account of accounts) {
-    const identitiesList = [];
-    for (const identity of account.identities) {
-      const mailIdentity = {
-        email: identity.email,
-        label: identity.label,
-        name: identity.name,
-        organization: identity.organization,
+  switch (scriptType) {
+    case "simple":
+      switch (event) {
+        case "new":
+          payload = true;
+          break;
+        case "read":
+        case "deleted":
+          payload = await window.scrNoti.hasUnreadMessages();
+          break;
+        case "start":
+          //==========================================
+          // For some reason, the folders may not be ready when
+          // Thunderbird starts (ex: "Error: Folder not found: /Inbox").
+          // So we retry for a couple of times before giving up.
+          //==========================================
+          payload = await window.scrNoti.tryNbrTimes(window.scrNoti.hasUnreadMessages, 10);
+          break;
       };
-      identitiesList.push(mailIdentity);
-    };
+      break;
+    case "extended":
+      // List of all accounts
+      const accounts = await messenger.accounts.list(false);
+      const accountsList = {};
+      for (const account of accounts) {
+        const identitiesList = [];
+        for (const identity of account.identities) {
+          const mailIdentity = {
+            email: identity.email,
+            label: identity.label,
+            name: identity.name,
+            organization: identity.organization,
+          };
+          identitiesList.push(mailIdentity);
+        };
 
-    const mailAccount = {
-      identities: identitiesList,
-      name: account.name,
-      type: account.type,
-    };
-    accountsList[account.id] = mailAccount;
+        const mailAccount = {
+          identities: identitiesList,
+          name: account.name,
+          type: account.type,
+        };
+        accountsList[account.id] = mailAccount;
+      };
+
+      // List of all folders, which should be included
+      const foldersToInclude =
+        await window.scrNoti.getFoldersToCheckForUnread();
+      const foldersList = [];
+      for (const folder of foldersToInclude) {
+        const folderInfo = await messenger.folders.getFolderInfo(folder);
+        const folderData = {
+          accountId: folder.accountId,
+          favorite: folderInfo.favorite,
+          name: folder.name,
+          path: folder.path,
+          totalMessageCount: folderInfo.totalMessageCount,
+          type: folder.type,
+          unreadMessageCount: folderInfo.unreadMessageCount,
+          seenMessageCount: seenMessages[folder.accountId + folder.path].size,
+        };
+        foldersList.push(folderData);
+      };
+
+      // Message data
+      if (event == "start") {
+        messageDetails = null;
+      } else {
+        const fullMessage = await browser.messages.getFull(message.id);
+        const folder = message.folder;
+        messageDetails = {
+          author: message.author,
+          bccList: message.bbcList,
+          ccList: message.ccList,
+          date: message.date,
+          flagged: message.flagged,
+          messageId: message.headerMessageId,
+          headersOnly: message.headersOnly,
+          junk: message.junk,
+          junkScore: message.junkScore,
+          read: message.read,
+          size: message.size,
+          subject: message.subject,
+          tags: message.tags,
+          folder: {
+            accountId: folder.accountId,
+            name: folder.name,
+            path: folder.path,
+            type: folder.type,
+          },
+          body: fullMessage,
+        };
+      };
+
+      // Assemble entire payload
+      payload = {
+        accounts: accountsList,
+        folders: foldersList,
+        event: event,
+        message: messageDetails,
+      };
+      break;
   };
 
-  // List of all folders, which should be included
-  const foldersToInclude =
-    await window.scrNoti.getFoldersToCheckForUnread();
-  const foldersList = [];
-  for (const folder of foldersToInclude) {
-    const folderInfo = await messenger.folders.getFolderInfo(folder);
-    const folderData = {
-      accountId: folder.accountId,
-      favorite: folderInfo.favorite,
-      name: folder.name,
-      path: folder.path,
-      totalMessageCount: folderInfo.totalMessageCount,
-      type: folder.type,
-      unreadMessageCount: folderInfo.unreadMessageCount,
-      seenMessageCount: seenMessages[folder.accountId + folder.path].size,
-    };
-    foldersList.push(folderData);
-  };
-
-  // Message data
-  if (event == "start") {
-    messageDetails = null;
-  } else {
-    const fullMessage = await browser.messages.getFull(message.id);
-    const folder = message.folder;
-    messageDetails = {
-      author: message.author,
-      bccList: message.bbcList,
-      ccList: message.ccList,
-      date: message.date,
-      // flagged: message.flagged,
-      messageId: message.headerMessageId,
-      // headersOnly: message.headersOnly,
-      // junk: message.junk,
-      // junkScore: message.junkScore,
-      // read: message.read,
-      // size: message.size,
-      subject: message.subject,
-      // tags: message.tags,
-      // folder: {
-      //   accountId: folder.accountId,
-      //   name: folder.name,
-      //   path: folder.path,
-      //   type: folder.type,
-      // },
-      content: fullMessage.parts[0].parts[0].body,
-      //header: fullMessage.headers,
-    };
-  };
-
-  // Assemble entire payload
-  payload = {
-    accounts: accountsList,
-    folders: foldersList,
-    event: event,
-    message: messageDetails,
-  };
-
-  if (nativeConnection == null) {
-    nativeConnection = await browser.runtime.connectNative(
-      "scriptableNotifications");
-  };
-  await nativeConnection.postMessage(payload);
-
-
-  await nativeConnection.onMessage.addListener((response) => {
-    const newProperties = {
-      junk: true,
-    };
-    if(response == "1")
-      browser.messages.update(message.id, newProperties);
+  const { connectionType } = await messenger.storage.local.get({
+    connectionType: "connectionless",
   });
+
+  switch (connectionType) {
+    case "connectionless":
+      await browser.runtime.sendNativeMessage(
+        "scriptableNotifications",
+        payload
+      );
+      break;
+    case "connectionbased":
+      if (nativeConnection == null) {
+        nativeConnection = await browser.runtime.connectNative(
+          "scriptableNotifications");
+      };
+      await nativeConnection.postMessage(payload);
+      await nativeConnection.onMessage.addListener((response) => {
+        const newProperties = {
+          junk: true,
+        };
+        if(response == "1")
+          browser.messages.update(message.id, newProperties);
+      });
+      break;
+  };
 
 };
 
@@ -283,6 +338,10 @@ window.scrNoti.tryNbrTimes = async (fnct, nbrTime) => {
 // Store all unread messages in global variable 'seenMessages'.
 //==========================================
 window.scrNoti.updateSeenMessages = async () => {
+  const scriptType = await window.scrNoti.getScriptType();
+  if (scriptType == "simple") {
+    return;
+  }
 
   const foldersToCheck = await window.scrNoti.getFoldersToCheckForUnread();
   if (foldersToCheck.length < 1) {
