@@ -6,6 +6,7 @@ import numpy as np
 import nltk
 from nltk.stem import WordNetLemmatizer
 from gensim.models import FastText
+import random
 
 # Ensure nltk resources are downloaded (can be commented out if already done)
 nltk.download('punkt')
@@ -62,7 +63,8 @@ def preprocess_data(data, fasttext, enc):
     df['Sender'] = df['Sender'].apply(extract_domain)
     df['Reply-To'] = df['Reply-To'].apply(extract_domain)
     df['Return-Path'] = df['Return-Path'].apply(extract_domain)
-
+    df['Sender-Return'] = df.apply(lambda row: 1 if row['Sender'] == row['Return-Path'] else 0, axis=1)
+    
     df['Date'] = df['Date'].apply(categorize_date)
     df['Day'] = df['Date'].apply(lambda x: 1 if x in [0, 2] else 0)
     df['Weekday'] = df['Date'].apply(lambda x: 1 if x in [1, 4] else 0)
@@ -96,15 +98,40 @@ def predict(data):
     return prediction
 
 def main():
+    # Read the sample data from CSV into a DataFrame
+    sample_data = pd.read_csv('training/training_data.csv')
 
-    # Example data (replace with actual email data for prediction)
-    data = ['O que é que podes esperar? 1. Conversas com Consultores EF que te podem explicar como é estudar no estrangeiro e estar completamente imerso numa cultura nova. 2. A oportunidade que ganhar uma bolsa de estudo no estrangeiro de cerca de $5000. 3. Excursões virtuais dos campus EF .','Rainmaking is hiring: Graduate Software Engineer for Payton.','LinkedIn <jobs-listings@linkedin.com>','<s-4sebtqhpx3pa1707g7w34ggenuq16r330ya80329vcsqxatb05i8izat@bounce.linkedin.com>','',"Wed, 3 May 2023 17:33:21 +0000 (UTC)"]
-    
-    # Predict
-    prediction = predict(data)
+    # Define the number of repetitions
+    num_repetitions = 5
 
-    # Display prediction result
-    print("The message is classified as SPAM." if prediction == 1 else "The message is classified as NOT SPAM.")
+    # Initialize a list to store accuracy values
+    accuracy_values = []
+
+    for _ in range(num_repetitions):
+        # Choose 100 random lines from the sample data
+        random_indices = random.sample(range(len(sample_data)), 100)
+        random_sample = sample_data.iloc[random_indices]
+
+        # Predict spam classification for the random sample
+        predictions = []
+        for _, row in random_sample.iterrows():
+            data = [row['Content'], row['Subject'], row['Sender'], row['Return-Path'], row['Reply-To'], row['Date']]
+            prediction = predict(data)
+            predictions.append(prediction)
+
+        # Add the actual labels from the random sample
+        actual_labels = random_sample['Label'].tolist()
+
+        # Calculate accuracy for this repetition
+        correct_predictions = sum(1 for predicted, actual in zip(predictions, actual_labels) if predicted == actual)
+        accuracy = correct_predictions / len(random_sample)
+        accuracy_values.append(accuracy)
+
+    # Calculate the average accuracy
+    average_accuracy = sum(accuracy_values) / num_repetitions
+
+    # Display the average accuracy
+    print(f"Average Accuracy over {num_repetitions} repetitions: {average_accuracy * 100:.2f}%")
 
 if __name__ == "__main__":
     main()

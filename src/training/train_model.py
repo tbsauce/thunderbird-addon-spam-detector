@@ -81,12 +81,11 @@ df['Combined_Text'] = df['Subject'] + ' ' + df['Content']
 df['Sender'] = df['Sender'].apply(extract_domain)
 df['Reply-To'] = df['Reply-To'].apply(extract_domain)
 df['Return-Path'] = df['Return-Path'].apply(extract_domain)
-print(df.head())
+df['Sender-Return'] = df.apply(lambda row: 1 if row['Sender'] == row['Return-Path'] else 0, axis=1)
+
 df['Date'] = df['Date'].apply(categorize_date)
-print(df.head())
 df['Day'] = df['Date'].apply(lambda x: 1 if x in [0, 2] else 0)
 df['Weekday'] = df['Date'].apply(lambda x: 1 if x in [1, 4] else 0)
-print(df.head())
 
 # Encoding categorical features
 df[['Sender', 'Reply-To', 'Return-Path']] = df[['Sender', 'Reply-To', 'Return-Path']].astype('category')
