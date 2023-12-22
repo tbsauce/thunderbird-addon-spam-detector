@@ -81,14 +81,20 @@ df['Combined_Text'] = df['Subject'] + ' ' + df['Content']
 df['Sender'] = df['Sender'].apply(extract_domain)
 df['Reply-To'] = df['Reply-To'].apply(extract_domain)
 df['Return-Path'] = df['Return-Path'].apply(extract_domain)
+print(df.head())
 df['Date'] = df['Date'].apply(categorize_date)
+print(df.head())
+df['Day'] = df['Date'].apply(lambda x: 1 if x in [0, 2] else 0)
+df['Weekday'] = df['Date'].apply(lambda x: 1 if x in [1, 4] else 0)
+print(df.head())
 
 # Encoding categorical features
 df[['Sender', 'Reply-To', 'Return-Path']] = df[['Sender', 'Reply-To', 'Return-Path']].astype('category')
 df[['Sender', 'Reply-To', 'Return-Path']] = df[['Sender', 'Reply-To', 'Return-Path']].apply(lambda x: x.cat.codes)
 
-enc = OneHotEncoder(max_categories=5)
-enc_data = pd.DataFrame(enc.fit_transform(df[['Sender', 'Reply-To', 'Return-Path']]).toarray()) 
+enc = OneHotEncoder(max_categories=5, sparse_output=False)
+enc_data = pd.DataFrame(enc.fit_transform(df[['Sender', 'Reply-To', 'Return-Path']])) 
+
 df = df.join(enc_data)
 
 # Train FastText Model
@@ -102,7 +108,8 @@ fasttext_features = np.stack(df['FastText_Features'].values)
 
 # Train-Test Split
 y = df['Label']
-X = df.drop(['Label', 'Content', 'Subject', 'Combined_Text','FastText_Features'], axis=1)
+X = df.drop(['Label', 'Content', 'Subject', 'Sender', 'Reply-To','Date' ,'Return-Path','Combined_Text','FastText_Features'], axis=1)
+
 X_train, X_test, y_train, y_test = train_test_split(np.hstack((X, fasttext_features)), y, stratify=y, test_size=0.2, random_state=42)
 
 # Define and train classifiers

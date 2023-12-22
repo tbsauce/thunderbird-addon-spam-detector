@@ -62,17 +62,21 @@ def preprocess_data(data, fasttext, enc):
     df['Sender'] = df['Sender'].apply(extract_domain)
     df['Reply-To'] = df['Reply-To'].apply(extract_domain)
     df['Return-Path'] = df['Return-Path'].apply(extract_domain)
+
     df['Date'] = df['Date'].apply(categorize_date)
+    df['Day'] = df['Date'].apply(lambda x: 1 if x in [0, 2] else 0)
+    df['Weekday'] = df['Date'].apply(lambda x: 1 if x in [1, 4] else 0)
+
 
     # Encoding categorical features
     df[['Sender', 'Reply-To', 'Return-Path']] = df[['Sender', 'Reply-To', 'Return-Path']].astype('category')
     df[['Sender', 'Reply-To', 'Return-Path']] = df[['Sender', 'Reply-To', 'Return-Path']].apply(lambda x: x.cat.codes)
 
     # Apply OneHotEncoding
-    encoded_data = pd.DataFrame(enc.transform(df[['Sender', 'Reply-To', 'Return-Path']]).toarray())
+    encoded_data = pd.DataFrame(enc.transform(df[['Sender', 'Reply-To', 'Return-Path']]))
 
     # Combine all features
-    df_final = pd.concat([df.drop(['Content', 'Subject', 'Combined_Text', 'FastText_Features'], axis=1), pd.DataFrame(fasttext_features), encoded_data], axis=1)
+    df_final = pd.concat([df.drop(['Content', 'Subject', 'Sender', 'Reply-To', 'Return-Path', 'Date','Combined_Text', 'FastText_Features'], axis=1), pd.DataFrame(fasttext_features), encoded_data], axis=1)
     df_final.columns = df_final.columns.astype(str)
 
     return df_final
