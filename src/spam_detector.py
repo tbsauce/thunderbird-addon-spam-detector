@@ -102,7 +102,7 @@ def main():
     sample_data = pd.read_csv('training/training_data.csv')
 
     # Define the number of repetitions
-    num_repetitions = 5
+    num_repetitions = 20
 
     # Initialize a list to store accuracy values
     accuracy_values = []
@@ -126,6 +126,8 @@ def main():
         correct_predictions = sum(1 for predicted, actual in zip(predictions, actual_labels) if predicted == actual)
         accuracy = correct_predictions / len(random_sample)
         accuracy_values.append(accuracy)
+        print(f"Accuracy: {accuracy * 100:.2f}%")
+
 
     # Calculate the average accuracy
     average_accuracy = sum(accuracy_values) / num_repetitions

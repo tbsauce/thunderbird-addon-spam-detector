@@ -1,15 +1,21 @@
 import os
 import email
 import csv
+import re  # Import regular expressions
 from email.header import decode_header
 import sys
+from bs4 import BeautifulSoup
+
 sys.path.append('..') 
 
-
-# Function to decode email subject
 def decode_subject(subject):
-    decoded_subject = decode_header(subject)[0]
-    return decoded_subject[0] if decoded_subject[0] else subject
+    decoded_subject, encoding = decode_header(subject)[0]
+    if isinstance(decoded_subject, bytes):
+        # Decode using the provided encoding, if available, or default to 'utf-8'
+        return decoded_subject.decode(encoding if encoding else 'utf-8', errors='ignore')
+    else:
+        # Return the decoded string as is
+        return decoded_subject
 
 # Specify the folders containing .eml files for spam and non-spam
 spam_folder_path = 'emails/spam'
@@ -38,8 +44,16 @@ def process_folder(folder_path, label):
             # Extract the email content
             content = ""
             for part in msg.walk():
-                if part.get_content_type() == "text/plain":
+                content_type = part.get_content_type()
+                if content_type == "text/plain":
                     content += part.get_payload(decode=True).decode("utf-8", errors="ignore")
+                elif content_type == "text/html" and not content:
+                    html_content = part.get_payload(decode=True).decode("utf-8", errors="ignore")
+                    soup = BeautifulSoup(html_content, 'html.parser')
+                    content += soup.get_text()
+
+            # Remove excessive whitespace from the content
+            content = re.sub(r'\s+', ' ', content).strip()
 
             # Append email information, content, and label to the list
             email_data.append([label, str(content), str(subject), sender, return_path ,reply_to, date])
