@@ -70,6 +70,8 @@ def text_to_fasttext_features(text, model):
 
 # Read the CSV file
 df = pd.read_csv('training_data.csv')
+df_copy = df.copy()
+
 
 # Preprocess the data
 lemmatizer = WordNetLemmatizer()
@@ -87,14 +89,12 @@ df['Date'] = df['Date'].apply(categorize_date)
 df['Day'] = df['Date'].apply(lambda x: 1 if x in [0, 2] else 0)
 df['Weekday'] = df['Date'].apply(lambda x: 1 if x in [1, 4] else 0)
 
-# Encoding categorical features
+# Encoding categorical features47.09
 df[['Sender', 'Reply-To', 'Return-Path']] = df[['Sender', 'Reply-To', 'Return-Path']].astype('category')
 df[['Sender', 'Reply-To', 'Return-Path']] = df[['Sender', 'Reply-To', 'Return-Path']].apply(lambda x: x.cat.codes)
 
 enc = OneHotEncoder(max_categories=5, sparse_output=False)
-enc_data = pd.DataFrame(enc.fit_transform(df[['Sender', 'Reply-To', 'Return-Path']])) 
-
-df = df.join(enc_data)
+encoded_data = pd.DataFrame(enc.fit_transform(df[['Sender', 'Reply-To', 'Return-Path']])) 
 
 # Train FastText Model
 fasttext_model = FastText(vector_size=10, window=3, min_count=1)
@@ -107,9 +107,17 @@ fasttext_features = np.stack(df['FastText_Features'].values)
 
 # Train-Test Split
 y = df['Label']
-X = df.drop(['Label', 'Content', 'Subject', 'Sender', 'Reply-To','Date' ,'Return-Path','Combined_Text','FastText_Features'], axis=1)
+X = pd.concat([df.drop(['Label','Content', 'Subject', 'Sender', 'Reply-To', 'Return-Path', 'Date','Combined_Text', 'FastText_Features'], axis=1), encoded_data, pd.DataFrame(fasttext_features)], axis=1)
+X.columns = X.columns.astype(str)
 
-X_train, X_test, y_train, y_test = train_test_split(np.hstack((X, fasttext_features)), y, stratify=y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.2, random_state=42)
+
+# Get the indexes of the test data
+test_indexes = X_test.index
+
+# Save the test data to a CSV file using the indexes
+test_data = df_copy.loc[test_indexes]
+test_data.to_csv('test_data.csv', index=False)
 
 # Define and train classifiers
 clfs = [

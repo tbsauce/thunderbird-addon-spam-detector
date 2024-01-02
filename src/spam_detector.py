@@ -7,6 +7,11 @@ import nltk
 from nltk.stem import WordNetLemmatizer
 from gensim.models import FastText
 import random
+import warnings
+
+# Ignore the specific UserWarning about feature names in RandomForestClassifier
+warnings.filterwarnings("ignore", message="X has feature names, but RandomForestClassifier was fitted without feature names", category=UserWarning)
+
 
 # Ensure nltk resources are downloaded (can be commented out if already done)
 nltk.download('punkt')
@@ -78,7 +83,7 @@ def preprocess_data(data, fasttext, enc):
     encoded_data = pd.DataFrame(enc.transform(df[['Sender', 'Reply-To', 'Return-Path']]))
 
     # Combine all features
-    df_final = pd.concat([df.drop(['Content', 'Subject', 'Sender', 'Reply-To', 'Return-Path', 'Date','Combined_Text', 'FastText_Features'], axis=1), pd.DataFrame(fasttext_features), encoded_data], axis=1)
+    df_final = pd.concat([df.drop(['Content', 'Subject', 'Sender', 'Reply-To', 'Return-Path', 'Date','Combined_Text', 'FastText_Features'], axis=1), encoded_data, pd.DataFrame(fasttext_features)], axis=1)
     df_final.columns = df_final.columns.astype(str)
 
     return df_final
@@ -93,41 +98,46 @@ def predict(data):
     processed_data = preprocess_data(data, fasttext, enc)
 
     # Predict
-    processed_data = processed_data.values
+    #processed_data = processed_data.values
     prediction = model.predict(processed_data)[0]
     return prediction
 
 def main():
     # Read the sample data from CSV into a DataFrame
-    sample_data = pd.read_csv('training/training_data.csv')
+    sample_data = pd.read_csv('training/test_data.csv')
 
     # Define the number of repetitions
-    num_repetitions = 20
+    num_repetitions = 10
 
     # Initialize a list to store accuracy values
     accuracy_values = []
 
     for _ in range(num_repetitions):
+        num_lines = 100  # Change this to the number of lines you want to process
         # Choose 100 random lines from the sample data
-        random_indices = random.sample(range(len(sample_data)), 100)
+        random_indices = random.sample(range(len(sample_data)), num_lines)
         random_sample = sample_data.iloc[random_indices]
-
-        # Predict spam classification for the random sample
-        predictions = []
-        for _, row in random_sample.iterrows():
-            data = [row['Content'], row['Subject'], row['Sender'], row['Return-Path'], row['Reply-To'], row['Date']]
-            prediction = predict(data)
-            predictions.append(prediction)
 
         # Add the actual labels from the random sample
         actual_labels = random_sample['Label'].tolist()
 
-        # Calculate accuracy for this repetition
-        correct_predictions = sum(1 for predicted, actual in zip(predictions, actual_labels) if predicted == actual)
-        accuracy = correct_predictions / len(random_sample)
+        # Predict spam classification for the random sample
+        correct_predictions = 0
+        for i in range(num_lines):  # Iterate through a range of integers
+            row = random_sample.iloc[i]  # Use iloc to access rows by integer index
+            data = [row['Content'], row['Subject'], row['Sender'], row['Return-Path'], row['Reply-To'], row['Date']]
+            prediction = predict(data)
+            if prediction == actual_labels[i]:
+                correct_predictions += 1
+
+            if (i + 1) % 10 == 0:  # +1 to start from 1 instead of 0
+                accuracy = correct_predictions / (i + 1)  # Calculate accuracy based on all predictions up to this point
+                print(f"Iteration {i + 1} Accuracy: {accuracy * 100:.2f}%")
+
+
+        accuracy = correct_predictions / num_lines
         accuracy_values.append(accuracy)
         print(f"Accuracy: {accuracy * 100:.2f}%")
-
 
     # Calculate the average accuracy
     average_accuracy = sum(accuracy_values) / num_repetitions
