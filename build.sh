@@ -2,7 +2,7 @@
 
 unzip src/models.zip -d src/
 
-# rm src/models
+rm src/models.zip
 
 pip install joblib
 pip install python-dateutil

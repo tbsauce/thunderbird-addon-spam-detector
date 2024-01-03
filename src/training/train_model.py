@@ -89,12 +89,12 @@ df['Date'] = df['Date'].apply(categorize_date)
 df['Day'] = df['Date'].apply(lambda x: 1 if x in [0, 2] else 0)
 df['Weekday'] = df['Date'].apply(lambda x: 1 if x in [1, 4] else 0)
 
-# Encoding categorical features47.09
+# Encoding categorical features
 df[['Sender', 'Reply-To', 'Return-Path']] = df[['Sender', 'Reply-To', 'Return-Path']].astype('category')
-df[['Sender', 'Reply-To', 'Return-Path']] = df[['Sender', 'Reply-To', 'Return-Path']].apply(lambda x: x.cat.codes)
 
 enc = OneHotEncoder(max_categories=5, sparse_output=False)
 encoded_data = pd.DataFrame(enc.fit_transform(df[['Sender', 'Reply-To', 'Return-Path']])) 
+encoded_data = encoded_data.add_prefix('encoded_')
 
 # Train FastText Model
 fasttext_model = FastText(vector_size=10, window=3, min_count=1)
@@ -104,10 +104,12 @@ fasttext_model.train(corpus_iterable=df['Combined_Text'].apply(lambda x: x.split
 # Apply the function to your dataframe
 df['FastText_Features'] = df['Combined_Text'].apply(lambda x: text_to_fasttext_features(x, fasttext_model))
 fasttext_features = np.stack(df['FastText_Features'].values)
+fasttext_features = pd.DataFrame(fasttext_features)
+fasttext_features = fasttext_features.add_prefix('fasttext_')
 
 # Train-Test Split
 y = df['Label']
-X = pd.concat([df.drop(['Label','Content', 'Subject', 'Sender', 'Reply-To', 'Return-Path', 'Date','Combined_Text', 'FastText_Features'], axis=1), encoded_data, pd.DataFrame(fasttext_features)], axis=1)
+X = pd.concat([df.drop(['Label','Content', 'Subject', 'Sender', 'Reply-To', 'Return-Path', 'Date','Combined_Text', 'FastText_Features'], axis=1), encoded_data, fasttext_features], axis=1)
 X.columns = X.columns.astype(str)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.2, random_state=42)
